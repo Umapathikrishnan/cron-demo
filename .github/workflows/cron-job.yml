@@ -1,52 +1,45 @@
-name: Todo Maintenance Cron Job
+name: Cron Job (Hit API)
 
-# This workflow runs automatically every 3 minutes
-# You can also trigger it manually from the Actions tab
 on:
   schedule:
-    # Runs every 3 minutes
-    # Format: minute hour day month day-of-week
-    # */3 means "every 3 minutes"
-    - cron: '*/3 * * * *'
+    # Runs every 3 minutes (for testing)
+    # Change to less frequent once tested (e.g., "0 */6 * * *" for every 6 hours)
+    - cron: "*/3 * * * *"
   
   # Allows manual triggering from GitHub Actions tab
   workflow_dispatch:
 
 jobs:
-  todo-maintenance:
+  hit-api:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run todo maintenance script
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Call Cron API
         run: |
-          echo "🔄 Running todo maintenance..."
+          echo "🔄 Calling cron API endpoint..."
           echo "⏰ Current time: $(date)"
           
-          # Example: You can create a maintenance script
-          # node scripts/todo-maintenance.js
+          response=$(curl -s -w "\n%{http_code}" -X GET "${{ secrets.VERCEL_APP_URL }}/api/cron" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}")
           
-          # For now, just log the action
-          echo "✅ Todo maintenance completed"
-          echo "📊 This job runs every 3 minutes"
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "📡 Response code: $http_code"
+          echo "📄 Response body: $body"
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Cron job executed successfully"
+          else
+            echo "❌ Cron job failed with status code: $http_code"
+            exit 1
+          fi
 
       - name: Summary
+        if: always()
         run: |
-          echo "### 📋 Todo Maintenance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Cron Job Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Time**: $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Endpoint**: \`/api/cron\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Schedule**: Every 3 minutes" >> $GITHUB_STEP_SUMMARY
