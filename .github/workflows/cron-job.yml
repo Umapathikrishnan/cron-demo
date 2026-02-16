@@ -19,7 +19,7 @@ jobs:
           echo "🔄 Calling cron API endpoint..."
           echo "⏰ Current time: $(date)"
           
-          response=$(curl -s -w "\n%{http_code}" -X GET "${{ secrets.VERCEL_APP_URL }}/api/cron" \
+          response=$(curl -s -L -w "\n%{http_code}" -X GET "${{ secrets.VERCEL_APP_URL }}/api/cron" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}")
           
           http_code=$(echo "$response" | tail -n1)
