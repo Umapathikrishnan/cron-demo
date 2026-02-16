@@ -1,0 +1,52 @@
+name: Todo Maintenance Cron Job
+
+# This workflow runs automatically every 3 minutes
+# You can also trigger it manually from the Actions tab
+on:
+  schedule:
+    # Runs every 3 minutes
+    # Format: minute hour day month day-of-week
+    # */3 means "every 3 minutes"
+    - cron: '*/3 * * * *'
+  
+  # Allows manual triggering from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  todo-maintenance:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run todo maintenance script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🔄 Running todo maintenance..."
+          echo "⏰ Current time: $(date)"
+          
+          # Example: You can create a maintenance script
+          # node scripts/todo-maintenance.js
+          
+          # For now, just log the action
+          echo "✅ Todo maintenance completed"
+          echo "📊 This job runs every 3 minutes"
+
+      - name: Summary
+        run: |
+          echo "### 📋 Todo Maintenance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Schedule**: Every 3 minutes" >> $GITHUB_STEP_SUMMARY
