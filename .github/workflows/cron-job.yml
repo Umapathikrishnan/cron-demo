@@ -2,8 +2,7 @@ name: Cron Job (Hit API)
 
 on:
   schedule:
-    # Runs every 3 minutes (for testing)
-    # Change to less frequent once tested (e.g., "0 */6 * * *" for every 6 hours)
+    # Runs every 30 minutes
     - cron: "*/3 * * * *"
   
   # Allows manual triggering from GitHub Actions tab
@@ -14,13 +13,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Call Cron API
+      - name: Call Todos API as Cron
         run: |
-          echo "🔄 Calling cron API endpoint..."
+          echo "🔄 Calling Todos API endpoint..."
           echo "⏰ Current time: $(date)"
           
-          response=$(curl -s -L -w "\n%{http_code}" -X GET "${{ secrets.VERCEL_APP_URL }}/api/cron" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}")
+          # Get current date for the todo title
+          CURRENT_DATE=$(date "+%Y-%m-%d %H:%M:%S")
+          
+          response=$(curl -s -L -w "\n%{http_code}" -X POST "${{ secrets.VERCEL_APP_URL }}/api/todos" \
+            -H "Content-Type: application/json" \
+            -d "{\"title\": \"Cron Todo - $CURRENT_DATE\", \"priority\": \"LOW\"}")
           
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | sed '$d')
@@ -28,7 +31,7 @@ jobs:
           echo "📡 Response code: $http_code"
           echo "📄 Response body: $body"
           
-          if [ "$http_code" -eq 200 ]; then
+          if [ "$http_code" -eq 200 ] || [ "$http_code" -eq 201 ]; then
             echo "✅ Cron job executed successfully"
           else
             echo "❌ Cron job failed with status code: $http_code"
@@ -41,5 +44,5 @@ jobs:
           echo "### 📋 Cron Job Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Time**: $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Endpoint**: \`/api/cron\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Schedule**: Every 3 minutes" >> $GITHUB_STEP_SUMMARY
+          echo "- **Endpoint**: \`/api/todos\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Schedule**: Every 30 minutes" >> $GITHUB_STEP_SUMMARY
